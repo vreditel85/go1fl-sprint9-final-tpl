@@ -21,7 +21,7 @@ func generateRandomElements(size int) []int {
 	}
 
 	// Инициализация генератора случайных чисел с использованием текущего времени
-	rand.Seed(time.Now().UnixNano())
+	//rand.Seed(time.Now().UnixNano())
 
 	// Создание слайса заданного размера
 	slice := make([]int, size)
@@ -40,7 +40,7 @@ func maximum(data []int) int {
 		return 0
 	}
 
-	max := math.MinInt // Начинаем с минимально возможного int
+	max := 0 //math.MinInt // Начинаем с минимально возможного int
 
 	for _, num := range data {
 		if num > max {
@@ -57,36 +57,43 @@ func maxChunks(data []int) int {
 		return math.MinInt
 	}
 
+	const CHUNKS = 4 // Должно быть определено где-то
+
 	var wg sync.WaitGroup
 	maxes := make([]int, CHUNKS)
 	chunkSize := len(data) / CHUNKS
 
 	for i := 0; i < CHUNKS; i++ {
 		wg.Add(1)
-		go func(chunkIndex int) {
+
+		// Определяем границы чанка
+		start := i * chunkSize
+		end := start + chunkSize
+		if i == CHUNKS-1 {
+			end = len(data) // Последний чанк может быть больше
+		}
+
+		// Создаем под-слайс для текущего чанка
+		chunk := data[start:end]
+
+		go func(chunkIndex int, chunk []int) {
 			defer wg.Done()
 
-			start := chunkIndex * chunkSize
-			end := start + chunkSize
-			if chunkIndex == CHUNKS-1 {
-				end = len(data) // Последний чанк может быть больше
-			}
-
-			chunk := data[start:end]
-			max := math.MinInt
+			// Находим максимум в чанке
+			max := chunk[0]
 			for _, num := range chunk {
 				if num > max {
 					max = num
 				}
 			}
 			maxes[chunkIndex] = max
-		}(i)
+		}(i, chunk)
 	}
 
 	wg.Wait()
 
 	// Находим максимум среди всех чанков
-	overallMax := math.MinInt
+	overallMax := maxes[0]
 	for _, m := range maxes {
 		if m > overallMax {
 			overallMax = m
